@@ -166,17 +166,28 @@ static void dgram_echo( const struct server *serp )
    char            buf[ DATAGRAM_SIZE ] ;
    union xsockaddr lsin;
    ssize_t             cc ;
-   socklen_t       sin_len = 0;
    int             descriptor = SERVER_FD( serp ) ;
+   struct iovec    iov[] = {
+      { .iov_base = buf, .iov_len = sizeof(buf) },
+   };
+   char            cmbuf[ CMSG_SPACE( sizeof( struct in6_pktinfo ) ) ];
+   struct msghdr   mh = {
+      .msg_name = SA( &lsin ),
+      .msg_iov = iov,
+      .msg_iovlen = sizeof( iov ) / sizeof( struct iovec ),
+      .msg_control = cmbuf,
+      .msg_controllen = sizeof( cmbuf ),
+   };
 
    if( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) )
-      sin_len = sizeof( struct sockaddr_in );
+      mh.msg_namelen = sizeof( struct sockaddr_in );
    else if( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) )
-      sin_len = sizeof( struct sockaddr_in6 );
+      mh.msg_namelen = sizeof( struct sockaddr_in6 );
 
-   cc = recvfrom( descriptor, buf, sizeof( buf ), 0, (struct sockaddr *)( &lsin ), &sin_len ) ;
+   cc = recvmsg( descriptor, &mh, 0 );
    if ( cc != (ssize_t)-1 ) {
-      (void) sendto( descriptor, buf, (size_t)cc, 0, SA( &lsin ), sizeof( lsin ) ) ;
+      iov[0].iov_len = cc;
+      (void) sendmsg( descriptor, &mh, 0 );
    }
 }
 
@@ -277,24 +288,34 @@ static void dgram_daytime( const struct server *serp )
 {
    char            time_buf[ BUFFER_SIZE ] ;
    union xsockaddr lsin ;
-   socklen_t       sin_len     = 0 ;
    unsigned int    buflen      = sizeof( time_buf ) ;
    int             descriptor  = SERVER_FD( serp ) ;
    ssize_t         val;
+   struct iovec    iov[] = {
+      { .iov_base = time_buf, .iov_len = sizeof(time_buf) },
+   };
+   char            cmbuf[ CMSG_SPACE( sizeof( struct in6_pktinfo ) ) ];
+   struct msghdr   mh = {
+      .msg_name = SA( &lsin ),
+      .msg_iov = iov,
+      .msg_iovlen = sizeof( iov ) / sizeof( struct iovec ),
+      .msg_control = cmbuf,
+      .msg_controllen = sizeof( cmbuf ),
+   };
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in );
+      mh.msg_namelen = sizeof( struct sockaddr_in );
    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in6 );
+      mh.msg_namelen = sizeof( struct sockaddr_in6 );
 
-   val = recvfrom( descriptor, time_buf, sizeof( time_buf ), 0,
-            (struct sockaddr *)( &lsin ), &sin_len );
+   val = recvmsg( descriptor, &mh, 0 );
    if ( val == (ssize_t)-1 )
       return ;
 
    daytime_protocol( time_buf, &buflen ) ;
    
-   (void) sendto( descriptor, time_buf, buflen, 0, SA(&lsin), sizeof( lsin ) ) ;
+   iov[0].iov_len = buflen;
+   (void) sendmsg( descriptor, &mh, 0 );
 }
 
 
@@ -342,24 +363,34 @@ static void stream_time( const struct server *serp )
 
 static void dgram_time( const struct server *serp )
 {
-   char     buf[ 1 ] ;
    unsigned char time_buf[4];
    union xsockaddr lsin ;
-   socklen_t       sin_len = 0 ;
    int             fd      = SERVER_FD( serp ) ;
    ssize_t         val;
+   char            cmbuf[ CMSG_SPACE( sizeof( struct in6_pktinfo ) ) ];
+   struct msghdr   mh = {
+      .msg_name = SA( &lsin ),
+      .msg_control = cmbuf,
+      .msg_controllen = sizeof( cmbuf ),
+   };
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in );
+      mh.msg_namelen = sizeof( struct sockaddr_in );
    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in6 );
+      mh.msg_namelen = sizeof( struct sockaddr_in6 );
 
-   val = recvfrom( fd, buf, sizeof( buf ), 0, (struct sockaddr *)( &lsin ), &sin_len );
+   val = recvmsg( fd, &mh, 0 );
    if ( val == (ssize_t)-1 )
       return ;
 
    time_protocol( time_buf ) ;
-   (void) sendto( fd, (char *) time_buf, 4, 0, SA( &lsin ), sin_len ) ;
+
+   struct iovec iov[] = {
+      { .iov_base = time_buf, .iov_len = sizeof(time_buf) },
+   };
+   mh.msg_iov = iov;
+   mh.msg_iovlen = sizeof( iov ) / sizeof( struct iovec );
+   (void) sendmsg( fd, &msg, 0 );
 }
 
 
@@ -451,17 +482,27 @@ static void dgram_chargen( const struct server *serp )
    char            *p ;
    unsigned int    len ;
    union xsockaddr lsin ;
-   socklen_t       sin_len = 0 ;
    int             fd      = SERVER_FD( serp ) ;
    unsigned int    left    = sizeof( buf ) ;
    ssize_t         val;
+   struct iovec    iov[] = {
+      { .iov_base = buf, .iov_len = sizeof(buf) },
+   };
+   char            cmbuf[ CMSG_SPACE( sizeof( struct in6_pktinfo ) ) ];
+   struct msghdr   mh = {
+      .msg_name = SA( &lsin ),
+      .msg_iov = iov,
+      .msg_iovlen = sizeof( iov ) / sizeof( struct iovec ),
+      .msg_control = cmbuf,
+      .msg_controllen = sizeof( cmbuf ),
+   };
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in );
+      mh.msg_namelen = sizeof( struct sockaddr_in );
    else if ( SC_IPV6( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
-      sin_len = sizeof( struct sockaddr_in6 );
+      mh.msg_namelen = sizeof( struct sockaddr_in6 );
 
-   val = recvfrom( fd, buf, (size_t)sizeof( buf ), 0, (struct sockaddr *)( &lsin ), &sin_len );
+   val = recvmsg( fd, &mh, 0 );
    if ( val == (ssize_t)-1 )
       return ;
 
@@ -475,7 +516,8 @@ static void dgram_chargen( const struct server *serp )
       if ( generate_line( p, len ) == NULL )
          break ;
    }
-   (void) sendto( fd, buf, (size_t)(p-buf), 0, SA( &lsin ), sin_len ) ;
+   iov[0].iov_len = (size_t) (p - buf);
+   (void) sendmsg( fd, &mh, 0 );
 }
 
 

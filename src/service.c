@@ -327,6 +327,19 @@ static status_e activate_normal( struct service *sp )
    }
 #endif
 
+   if( SC_IPV4( scp ) )
+   {
+      if ( setsockopt( sd, IPPROTO_IP, IP_PKTINFO, &on, sizeof( on ) ) < 0 )
+         msg( LOG_WARNING, func,
+              "setsockopt IP_PKTINFO failed (%m). service = %s", sid );
+   }
+   else if( SC_IPV6( scp ) )
+   {
+      if ( setsockopt( sd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof( on ) ) < 0 )
+         msg( LOG_WARNING, func,
+              "setsockopt IPV6_RECVPKTINFO failed (%m). service = %s", sid );
+   }
+
    return( OK ) ;
 }
 
