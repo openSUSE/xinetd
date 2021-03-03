@@ -508,6 +508,26 @@ seconds to wait before re\-enabling the service after it has been disabled.
 The default for this setting is 50 incoming connections and the interval
 is 10 seconds.
 .TP
+.B leaky_bucket
+Limits the rate of incoming connections over a custom interval of time using
+the leaky bucket algorithm.
+This option conflicts with the cps option.
+The leaky bucket algorithm works by logically having a a "bucket" with a
+count.
+The bucket fills at a constant rate (based on the connection rate) up to a
+maximum amount.
+For each connection attempt, the bucket count decrements by one.
+Once the bucket count goes below zero, the service is disabled temporarily.
+Takes four aguments.
+The first argument is the number of connections per interval.
+The second argument is the interval length in seconds.
+The third argument is the length of time to track the history in seconds (the
+length of time for the bucket to completely refill from empty).
+The fourth argument is the number of seconds to wait before re-enabling the
+service after it has been disabled.
+See https://en.wikipedia.org/wiki/Leaky_bucket for a description of the leaky
+bucket algorithm.
+.TP
 .B max_load
 Takes a floating point value as the load at which the service will
 stop accepting connections.  For example: 2 or 2.5.  The service

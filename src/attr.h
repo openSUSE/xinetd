@@ -62,6 +62,7 @@
 #define A_MDNS             44
 #define A_LIBWRAP          45
 #define A_RLIMIT_FILES     46
+#define A_LEAKY_BUCKET     47
 
 /*
  * SERVICE_ATTRIBUTES is the number of service attributes and also

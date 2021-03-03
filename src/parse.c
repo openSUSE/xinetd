@@ -79,6 +79,7 @@ static const struct attribute service_attributes[] =
    { "banner_success", A_BANNER_SUCCESS, 1,  banner_success_parser  },
    { "banner_fail",    A_BANNER_FAIL,    1,  banner_fail_parser     },
    { "cps",            A_CPS,            2,  cps_parser             },
+   { "leaky_bucket",   A_LEAKY_BUCKET,   4,  leaky_bucket_parser    },
    { "disable",        A_SVCDISABLE,     1,  svcdisable_parser      },
 #ifdef HAVE_LOADAVG
    { "max_load",       A_MAX_LOAD,       1,  max_load_parser        },
@@ -128,6 +129,7 @@ static const struct attribute default_attributes[] =
    { "banner_success",  A_BANNER_SUCCESS,  1,   banner_success_parser },
    { "banner_fail",     A_BANNER_FAIL,     1,   banner_fail_parser    },
    { "cps",             A_CPS,             2,   cps_parser            },
+   { "leaky_bucket",    A_LEAKY_BUCKET,    4,   leaky_bucket_parser   },
    { "enabled",         A_ENABLED,        -2,   enabled_parser        },
 #ifdef HAVE_LOADAVG
    { "max_load",        A_MAX_LOAD,        1,   max_load_parser       },

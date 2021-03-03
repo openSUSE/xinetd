@@ -43,6 +43,7 @@ status_e groups_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e banner_success_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e banner_fail_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e cps_parser(pset_h, struct service_config *, enum assign_op) ;
+status_e leaky_bucket_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e enabled_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e svcdisable_parser(pset_h, struct service_config *, enum assign_op);
 #ifdef HAVE_LOADAVG

@@ -281,8 +281,55 @@ access_e parent_access_control( struct service *sp, const connection_s *cp )
    if( (strncmp(SC_NAME( scp ), INTERCEPT_SERVICE_NAME, sizeof(INTERCEPT_SERVICE_NAME)) == 0) || (strncmp(SC_NAME( scp ), LOG_SERVICE_NAME, sizeof(LOG_SERVICE_NAME)) == 0) ) 
       return (AC_OK);
 
+   /* Leaky bucket rate-limit handler */
+   if( SC_SPECIFIED( scp, A_LEAKY_BUCKET ) && SC_TIME_CONN_MAX(scp) != 0 ) {
+      nowtime = time(NULL); // seconds
+      msg( LOG_DEBUG, __func__,
+            "Enforcing LB limit for service %s: nowtime = %lld",
+            SC_NAME( scp ), (long long) nowtime);
+
+      if( SC_LB_LAST_CONN_TIME(scp) == 0 ) {
+         /* first connection */
+         SC_LB_LAST_CONN_TIME(scp) = nowtime;
+         SC_LB_BUCKET_COUNT(scp) = SC_LB_INIT_BUCKET_COUNT(scp) - 1;
+         msg( LOG_DEBUG, __func__,
+               "    first LB connection: bucket_count = %f",
+               SC_LB_BUCKET_COUNT(scp));
+      } else {
+         time_t time_diff_secs;
+         time_diff_secs = nowtime - SC_LB_LAST_CONN_TIME(scp);
+         SC_LB_LAST_CONN_TIME(scp) = nowtime;
+         msg( LOG_DEBUG, __func__,
+               "    start_bucket_count = %f, diff_secs = %lld",
+               SC_LB_BUCKET_COUNT(scp), (long long) time_diff_secs );
+
+         /* Fill bucket based on elapsed time */
+         SC_LB_BUCKET_COUNT(scp) += time_diff_secs * SC_LB_FILL_PER_SEC(scp);
+
+         if (SC_LB_BUCKET_COUNT(scp) > SC_LB_INIT_BUCKET_COUNT(scp)) {
+            SC_LB_BUCKET_COUNT(scp) = SC_LB_INIT_BUCKET_COUNT(scp);
+         }
+
+         /* Decrement bucket for current connection */
+         SC_LB_BUCKET_COUNT(scp)--;
+
+         msg( LOG_DEBUG, __func__,
+               "    end_bucket_count = %f",
+               SC_LB_BUCKET_COUNT(scp));
+
+         if (SC_LB_BUCKET_COUNT(scp) < 0) {
+            SC_LB_BUCKET_COUNT(scp) = SC_LB_INIT_BUCKET_COUNT(scp);
+            cps_service_stop(sp, "excessive incoming connections");
+            return(AC_CPS);
+         }
+      }
+   }
+
    /* CPS handler */
-   if( SC_TIME_CONN_MAX(scp) != 0 ) {
+   /* Only run CPS logic when leaky_bucket is not being enforced because
+      even when 'cps' option is not specified, CPS is enforced by default. */
+   if( ! SC_SPECIFIED( scp, A_LEAKY_BUCKET ) && SC_TIME_CONN_MAX( scp ) != 0 ) {
+      msg( LOG_DEBUG, __func__, "CHECKING CPS");
       int time_diff;
       nowtime = time(NULL);
       time_diff = nowtime - SC_TIME_LIMIT(scp) ;
@@ -294,6 +341,7 @@ access_e parent_access_control( struct service *sp, const connection_s *cp )
          SC_TIME_CONN(scp)++;
          if( time_diff == 0 ) time_diff = 1;
          if( SC_TIME_CONN(scp)/time_diff > SC_TIME_CONN_MAX(scp) ) {
+            /* Stop the service; schedule the restart */
             cps_service_stop(sp, "excessive incoming connections");
             return(AC_CPS);
          }
