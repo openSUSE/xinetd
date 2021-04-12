@@ -270,16 +270,16 @@ static void set_credentials( const struct service_config *scp )
             }
          }
 #endif   /* ! NO_INITGROUPS */
-      }
-   }
 
-   if ( SC_SPECIFIED( scp, A_USER ) ) {
-         if ( setuid( SC_UID( scp ) ) == -1 )
-         {
-            msg( LOG_ERR, func, "setuid failed: %m" ) ;
-            _exit( 1 ) ;
+         if ( SC_SPECIFIED( scp, A_USER ) ) {
+            if ( setuid( SC_UID( scp ) ) == -1 )
+            {
+               msg( LOG_ERR, func, "setuid failed: %m" ) ;
+               _exit( 1 ) ;
+            }
          }
       }
+   }
 
    if ( SC_SPECIFIED( scp, A_UMASK ) ) 
       umask(SC_UMASK(scp));
