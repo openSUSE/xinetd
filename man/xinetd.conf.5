@@ -512,8 +512,7 @@ is 10 seconds.
 Limits the rate of incoming connections over a custom interval of time using
 the leaky bucket algorithm.
 This option conflicts with the cps option.
-The leaky bucket algorithm works by logically having a a "bucket" with a
-count.
+The leaky bucket algorithm works by logically having a "bucket" with a count.
 The bucket fills at a constant rate (based on the connection rate) up to a
 maximum amount.
 For each connection attempt, the bucket count decrements by one.
