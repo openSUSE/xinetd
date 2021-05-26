@@ -309,9 +309,9 @@ void sc_dump( struct service_config *scp,
       tabprint( fd, tab_level+1, "CPS = max conn:%lu wait:%lu\n", 
          SC_TIME_CONN_MAX(scp), SC_TIME_WAIT(scp) );
 
-   if ( SC_SPECIFIED( scp, A_LEAKY_BUCKET ) ) {
+   if ( SC_SPECIFIED( scp, A_RATE_LIMIT ) ) {
       tabprint( fd, tab_level+1,
-         "LB = max conn %lld per %lld sec over %lld sec history, wait %lld sec\n",
+         "rate_limit = %lld conn per %lld sec over %lld sec history, wait %lld sec\n",
          (long long) SC_TIME_CONN_MAX(scp),
          (long long) SC_LB_INTERVAL_LEN_SEC(scp),
          (long long) SC_LB_HISTORY_LEN_SEC(scp),

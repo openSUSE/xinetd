@@ -282,7 +282,7 @@ access_e parent_access_control( struct service *sp, const connection_s *cp )
       return (AC_OK);
 
    /* Leaky bucket rate-limit handler */
-   if( SC_SPECIFIED( scp, A_LEAKY_BUCKET ) && SC_TIME_CONN_MAX(scp) != 0 ) {
+   if( SC_SPECIFIED( scp, A_RATE_LIMIT ) && SC_TIME_CONN_MAX(scp) != 0 ) {
       nowtime = time(NULL); // seconds
       msg( LOG_DEBUG, __func__,
             "Enforcing LB limit for service %s: nowtime = %lld",
@@ -326,9 +326,9 @@ access_e parent_access_control( struct service *sp, const connection_s *cp )
    }
 
    /* CPS handler */
-   /* Only run CPS logic when leaky_bucket is not being enforced because
+   /* Only run CPS logic when rate_limit is not being enforced because
       even when 'cps' option is not specified, CPS is enforced by default. */
-   if( ! SC_SPECIFIED( scp, A_LEAKY_BUCKET ) && SC_TIME_CONN_MAX( scp ) != 0 ) {
+   if( ! SC_SPECIFIED( scp, A_RATE_LIMIT ) && SC_TIME_CONN_MAX( scp ) != 0 ) {
       msg( LOG_DEBUG, __func__, "CHECKING CPS");
       int time_diff;
       nowtime = time(NULL);

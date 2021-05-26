@@ -500,6 +500,7 @@ maximum instances of this service per source IP address.  This can
 also be specified in the defaults section.
 .TP
 .B cps
+Deprecated in favor of rate_limit.
 Limits the rate of incoming connections.  Takes two arguments.
 The first argument is the number of connections per second to handle.
 If the rate of incoming connections is higher than this, the service
@@ -508,7 +509,7 @@ seconds to wait before re\-enabling the service after it has been disabled.
 The default for this setting is 50 incoming connections and the interval
 is 10 seconds.
 .TP
-.B leaky_bucket
+.B rate_limit
 Limits the rate of incoming connections over a custom interval of time using
 the leaky bucket algorithm.
 This option conflicts with the cps option.

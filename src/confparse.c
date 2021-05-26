@@ -133,9 +133,9 @@ static status_e service_fill( struct service_config *scp,
        SC_SPECIFY(scp, A_SERVER);
    }
 
-   if (SC_SPECIFIED( scp, A_CPS ) && SC_SPECIFIED( scp, A_LEAKY_BUCKET )) {
+   if (SC_SPECIFIED( scp, A_CPS ) && SC_SPECIFIED( scp, A_RATE_LIMIT )) {
       msg(LOG_ERR, func,
-         "cps and leaky_bucket options are mutually exclusive: %s",
+         "cps and rate_limit options are mutually exclusive: %s",
          SC_NAME(scp));
       return( FAILED ) ;
    }
@@ -175,7 +175,7 @@ static status_e service_fill( struct service_config *scp,
       SC_SPECIFY( scp, A_GROUPS );
    }
 
-   if ( ! SC_SPECIFIED( scp, A_CPS ) && ! SC_SPECIFIED( scp, A_LEAKY_BUCKET ) )
+   if ( ! SC_SPECIFIED( scp, A_CPS ) && ! SC_SPECIFIED( scp, A_RATE_LIMIT ) )
    {
       SC_TIME_CONN_MAX(scp) = SC_SPECIFIED( def, A_CPS ) ? 
          SC_TIME_CONN_MAX(def) : DEFAULT_LOOP_RATE;

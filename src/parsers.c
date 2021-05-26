@@ -559,7 +559,7 @@ status_e cps_parser( pset_h values,
    return(OK);
 }
 
-status_e leaky_bucket_parser( pset_h values,
+status_e rate_limit_parser( pset_h values,
                      struct service_config *scp,
                      enum assign_op op )
 {
@@ -571,7 +571,7 @@ status_e leaky_bucket_parser( pset_h values,
 
    if( max_conn_per_interval == NULL || interval_len_secs == NULL || history_len_secs == NULL || wait_time_secs == NULL) {
       parsemsg(LOG_ERR, __func__,
-         "NULL options specified in leaky_bucket; must specify: MAX_CONN_PER_INTERVAL INTERVAL_LEN_SECS HISTORY_LEN_SEC WAIT_TIME_SECS");
+         "NULL options specified in rate_limit; must specify: MAX_CONN_PER_INTERVAL INTERVAL_LEN_SECS HISTORY_LEN_SEC WAIT_TIME_SECS");
       goto error;
    }
    if( parse_ubase10(max_conn_per_interval, &max_conn_per_interval_int) ) {
@@ -581,17 +581,17 @@ status_e leaky_bucket_parser( pset_h values,
    }
    if( parse_ubase10(interval_len_secs, &interval_len_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "leaky_bucket interval_len_secs argument not a number");
+         "rate_limit interval_len_secs argument not a number");
       goto error;
    }
    if( parse_ubase10(history_len_secs, &history_len_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "leaky_bucket history_len_secs argument not a number");
+         "rate_limit history_len_secs argument not a number");
       goto error;
    }
    if( parse_ubase10(wait_time_secs, &wait_time_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "leaky_bucket wait_time_secs argument not a number");
+         "rate_limit wait_time_secs argument not a number");
       goto error;
    }
 
@@ -599,7 +599,7 @@ status_e leaky_bucket_parser( pset_h values,
       || interval_len_secs_int <= 0
       || history_len_secs_int <= 0
       || wait_time_secs_int <= 0) {
-      parsemsg(LOG_ERR, __func__, "leaky_bucket arguments invalid");
+      parsemsg(LOG_ERR, __func__, "rate_limit arguments invalid");
       goto error;
    }
 
