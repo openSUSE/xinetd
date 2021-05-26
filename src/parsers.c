@@ -560,8 +560,8 @@ status_e cps_parser( pset_h values,
 }
 
 status_e rate_limit_parser( pset_h values,
-                     struct service_config *scp,
-                     enum assign_op op )
+                            struct service_config *scp,
+                            enum assign_op op )
 {
    char *max_conn_per_interval = (char *) pset_pointer(values, 0);
    char *interval_len_secs = (char *) pset_pointer(values, 1);
