@@ -504,8 +504,9 @@ Deprecated in favor of rate_limit.
 Limits the rate of incoming connections.  Takes two arguments.
 The first argument is the number of connections per second to handle.
 If the rate of incoming connections is higher than this, the service
-will be temporarily disabled.  The second argument is the number of
-seconds to wait before re\-enabling the service after it has been disabled.
+will be temporarily disabled.
+The second argument is the duration to wait before re\-enabling the service
+after it has been disabled.
 The default for this setting is 50 incoming connections and the interval
 is 10 seconds.
 .TP
@@ -520,8 +521,8 @@ For each connection attempt, the bucket count decrements by one.
 Once the bucket count goes below zero, the service is disabled temporarily.
 Takes four aguments.
 The first argument is the number of connections per interval.
-The second argument is the interval length in seconds.
-The third argument is the length of time to track the history in seconds (the
+The second argument is the interval duration.
+The third argument is the length of time to track the history duration (the
 length of time for the bucket to completely refill from empty).
 The fourth argument is the number of seconds to wait before re-enabling the
 service after it has been disabled.
@@ -786,6 +787,56 @@ is specified, only the services specified are available.  If
 is not specified, all services are assumed to be enabled,
 except those listed in
 .I disabled.
+.LP
+Time durations can be optionally have suffixes (without whitespace between) indicating the units.
+If not specified, seconds are assumed:
+.sp 1
+.PD .1v
+.RS
+.TP 5
+.B s
+second
+.TP
+.B m
+minute
+.TP
+.B h
+hour
+.TP
+.B d
+day
+.RE
+.PD
+.LP
+Example durations:
+.sp 1
+.PD .1v
+.RS
+.TP 8
+.B 5
+5 seconds
+.TP
+.B 7s
+7 seconds
+.TP
+.B 10m
+10 minutes \(-> 600 seconds
+.RE
+.PD
+.LP
+The following attribute values support time duration suffixes:
+.sp 1
+.PD .1v
+.RS
+.TP 14
+.B rate_limit
+(arguments 2, 3, 4 only)
+.TP
+.B cps
+(argument 2 only)
+.RE
+.PD
+.LP
 
 .\" *********************** INTERNAL SERVICES ****************************
 .SH "INTERNAL SERVICES"

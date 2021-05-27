@@ -306,6 +306,90 @@ int parse_ull(const char *str, int base, int term, unsigned long long *res)
 	return -1;
 }
 
+/*
+ * Overwrite str's suffix with NUL; set suffix_char to the suffix.
+ * str and suffix must be valid pointers.
+ *
+ * Returns: 0 on success; -1 otherwise.
+ */
+static int duration_str_parts(char *str, char *suffix_char) {
+   while (*str && isdigit(*str)) {
+      str++;
+   }
+
+   if (*str && str[1]) {
+      msg( LOG_ERR, __func__, "suffix can only have one character" ) ;
+      return -1;
+   }
+   *suffix_char = *str;
+   *str = NUL;
+
+   return 0;
+}
+
+/*
+ * Parse a value such with an optional suffix indicating the units.
+ * If no suffix is provided, 's' is assumed.
+ * On success, the res parameter is assigned the duration in seconds.
+ *
+ * Returns: 0 on success; -1 on error.
+ *
+ * Supported suffixes:
+ *     s -> seconds
+ *     m -> minutes
+ *     h -> hours
+ *     d -> days
+ */
+int parse_duration_as_seconds(const char *str, unsigned int *res)
+{
+   char suffix_char;
+   char *str_copy;
+   int ret = 0;
+	unsigned long long res_ull;
+
+   str_copy = strdup(str);
+   if (NULL == str_copy) {
+      ret = -1;
+      goto finish;
+   }
+
+   if (duration_str_parts(str_copy, &suffix_char)) {
+      ret = -1;
+      goto finish;
+   }
+
+   if (parse_ull(str_copy, 10, -1, &res_ull)) {
+      ret = -1;
+      goto finish;
+   }
+
+   switch (suffix_char) {
+      case NUL:
+         /* fallthrough */
+      case 's':
+         break;
+      case 'm':
+         res_ull *= SECONDS_PER_MINUTE;
+         break;
+      case 'h':
+         res_ull *= SECONDS_PER_HOUR;
+         break;
+      case 'd':
+         res_ull *= SECONDS_PER_DAY;
+         break;
+      default:
+         ret = -1;
+         parsemsg(LOG_ERR, __func__, "invalid duration suffix %c", suffix_char);
+         break;
+   }
+   *res = (unsigned int) res_ull;
+
+finish:
+   free(str_copy);
+
+   return ret;
+}
+
 int parse_ubase10(const char *str, unsigned int *res)
 {
 	return parse_uint(str, 10, -1, res);

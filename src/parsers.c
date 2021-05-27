@@ -531,17 +531,17 @@ status_e cps_parser( pset_h values,
    unsigned int waittime_int, conn_max;
 
    if( cps == NULL || waittime == NULL ) {
-      parsemsg(LOG_ERR, "cps_parser", "NULL options specified in cps");
+      parsemsg(LOG_ERR, __func__, "NULL options specified in cps");
       return( FAILED );
    }
    if( parse_ubase10(cps, &conn_max) ) {
-      parsemsg(LOG_ERR, "cps_parser", "cps argument not a number");
+      parsemsg(LOG_ERR, __func__, "cps argument not a number");
       SC_TIME_CONN_MAX(scp) = 0;
       SC_TIME_WAIT(scp) = 0;
       return( FAILED );
    }
-   if( parse_ubase10(waittime, &waittime_int) ) {
-      parsemsg(LOG_ERR, "cps_parser", "cps time argument not a number");
+   if( parse_duration_as_seconds(waittime, &waittime_int) ) {
+      parsemsg(LOG_ERR, __func__, "cps time argument not a valid duration");
       SC_TIME_CONN_MAX(scp) = 0;
       SC_TIME_WAIT(scp) = 0;
       return( FAILED );
@@ -550,7 +550,7 @@ status_e cps_parser( pset_h values,
    SC_TIME_CONN_MAX(scp) = conn_max;
 
    if( SC_TIME_CONN_MAX(scp) < 0 || SC_TIME_WAIT(scp) < 0 ) {
-      parsemsg(LOG_ERR, "cps_parser", "cps arguments invalid");
+      parsemsg(LOG_ERR, __func__, "cps arguments invalid");
       SC_TIME_CONN_MAX(scp) = 0;
       SC_TIME_WAIT(scp) = 0;
       return( FAILED );
@@ -579,23 +579,26 @@ status_e rate_limit_parser( pset_h values,
          "max_conn_per_interval argument not a number");
       goto error;
    }
-   if( parse_ubase10(interval_len_secs, &interval_len_secs_int) ) {
+   if( parse_duration_as_seconds(interval_len_secs, &interval_len_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "rate_limit interval_len_secs argument not a number");
+         "rate_limit interval_len_secs \"%s\" not a valid duration",
+         interval_len_secs);
       goto error;
    }
-   if( parse_ubase10(history_len_secs, &history_len_secs_int) ) {
+   if( parse_duration_as_seconds(history_len_secs, &history_len_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "rate_limit history_len_secs argument not a number");
+         "rate_limit history_len_secs \"%s\" not a valid duration",
+         history_len_secs);
       goto error;
    }
-   if( parse_ubase10(wait_time_secs, &wait_time_secs_int) ) {
+   if( parse_duration_as_seconds(wait_time_secs, &wait_time_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "rate_limit wait_time_secs argument not a number");
+         "rate_limit wait_time_secs \"%s\" argument not a number",
+         wait_time_secs);
       goto error;
    }
 
-   if( max_conn_per_interval_int < 0
+   if( max_conn_per_interval_int <= 0
       || interval_len_secs_int <= 0
       || history_len_secs_int <= 0
       || wait_time_secs_int <= 0) {
