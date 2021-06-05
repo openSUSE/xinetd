@@ -505,6 +505,7 @@ Limits the rate of incoming connections.  Takes two arguments.
 The first argument is the number of connections per second to handle.
 If the rate of incoming connections is higher than this, the service
 will be temporarily disabled.
+Specifying UNLIMITED will disable rate-limit checks.
 The second argument is the duration to wait before re\-enabling the service
 after it has been disabled.
 The default for this setting is 50 incoming connections and the interval
@@ -521,6 +522,7 @@ For each connection attempt, the bucket count decrements by one.
 Once the bucket count goes below zero, the service is disabled temporarily.
 Takes four aguments.
 The first argument is the number of connections per interval.
+Specifying UNLIMITED will disable rate-limit checks.
 The second argument is the interval duration.
 The third argument is the length of time to track the history duration (the
 length of time for the bucket to completely refill from empty).
@@ -758,6 +760,8 @@ don't specify those attributes. Possible default attributes:
 .B groups
 .TP
 .B cps
+.TP
+.B rate_limit
 .TP
 .B max_load
 .TP

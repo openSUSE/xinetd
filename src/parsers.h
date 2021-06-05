@@ -39,6 +39,8 @@ status_e redir_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e bind_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e banner_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e per_source_parser(pset_h, struct service_config *, enum assign_op) ;
+status_e rate_limit_update(struct service_config *, char,
+   unsigned int, unsigned int, unsigned int, unsigned int);
 status_e groups_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e banner_success_parser(pset_h, struct service_config *, enum assign_op) ;
 status_e banner_fail_parser(pset_h, struct service_config *, enum assign_op) ;

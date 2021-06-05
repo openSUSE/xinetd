@@ -27,6 +27,7 @@
 #include "msg.h"
 #include "xconfig.h"
 #include "parse.h"
+#include "parsers.h"
 #include "special.h"
 #include "sconst.h"
 #include "env.h"
@@ -140,6 +141,14 @@ static status_e service_fill( struct service_config *scp,
       return( FAILED ) ;
    }
 
+   /* Treat cps as if we specified rate_limit */
+   if (SC_SPECIFIED( def, A_CPS )) {
+      SC_SPECIFY( def, A_RATE_LIMIT );
+   }
+   if (SC_SPECIFIED( scp, A_CPS )) {
+      SC_SPECIFY( scp, A_RATE_LIMIT );
+   }
+
    if ( ! SC_IS_INTERNAL( scp ) && fix_server_argv( scp ) == FAILED )
       return( FAILED ) ;
 
@@ -175,13 +184,26 @@ static status_e service_fill( struct service_config *scp,
       SC_SPECIFY( scp, A_GROUPS );
    }
 
-   if ( ! SC_SPECIFIED( scp, A_CPS ) && ! SC_SPECIFIED( scp, A_RATE_LIMIT ) )
+   if ( ! SC_SPECIFIED( scp, A_RATE_LIMIT ) )
    {
-      SC_TIME_CONN_MAX(scp) = SC_SPECIFIED( def, A_CPS ) ? 
-         SC_TIME_CONN_MAX(def) : DEFAULT_LOOP_RATE;
-      SC_TIME_WAIT(scp) = SC_SPECIFIED( def, A_CPS ) ? 
-         SC_TIME_WAIT(def) : DEFAULT_LOOP_TIME;
-      SC_TIME_REENABLE(scp) = 0;
+      char is_rate_unlimited;
+      unsigned int max_conn_per_interval, interval_len_secs, history_len_secs, wait_time_secs;
+      if ( SC_SPECIFIED( def, A_RATE_LIMIT )) {
+         is_rate_unlimited = SC_RATE_LIMIT_UNLIMITED( def );
+         max_conn_per_interval = SC_TIME_CONN_MAX( def );
+         interval_len_secs = SC_LB_INTERVAL_LEN_SEC( def );
+         history_len_secs = SC_LB_HISTORY_LEN_SEC ( def );
+         wait_time_secs = SC_TIME_WAIT( def );
+      } else {
+         is_rate_unlimited = FALSE;
+         max_conn_per_interval = DEFAULT_LOOP_RATE;
+         interval_len_secs = DEFAULT_RATE_INTERVAL_LEN_SEC;
+         history_len_secs = DEFAULT_RATE_HISTORY_LEN_SEC;
+         wait_time_secs = DEFAULT_LOOP_TIME;
+      }
+      rate_limit_update(scp, is_rate_unlimited,
+         max_conn_per_interval, interval_len_secs,
+         history_len_secs, wait_time_secs);
    }
 
 #ifdef HAVE_LOADAVG

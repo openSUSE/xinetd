@@ -521,6 +521,59 @@ status_e per_source_parser( pset_h values,
    return(OK);
 }
 
+static void rate_limit_error_cleanup(struct service_config *scp)
+{
+   SC_LB_INIT_BUCKET_COUNT(scp) = 0;
+   SC_LB_FILL_PER_SEC(scp) = 0.0;
+   SC_TIME_CONN_MAX(scp) = 0;
+   SC_TIME_WAIT(scp) = 0;
+   SC_LB_INTERVAL_LEN_SEC(scp) = 0;
+   SC_LB_HISTORY_LEN_SEC(scp) = 0;
+}
+
+status_e rate_limit_update(
+   struct service_config *scp,
+   char is_rate_unlimited,
+   unsigned int max_conn_per_interval, unsigned int interval_len_secs,
+   unsigned int history_len_secs, unsigned int wait_time_secs)
+{
+
+   if( is_rate_unlimited ) {
+      rate_limit_error_cleanup(scp);
+      SC_RATE_LIMIT_UNLIMITED(scp) = 1;
+      return( OK );
+   }
+
+   if( max_conn_per_interval <= 0 ) {
+      parsemsg(LOG_ERR, __func__,
+         "invalid rate_limit: must be " UNLIMITED_STR " or positive integer");
+      goto error;
+   }
+   if( interval_len_secs <= 0
+      || history_len_secs <= 0
+      || wait_time_secs <= 0) {
+      parsemsg(LOG_ERR, __func__, "rate_limit arguments invalid");
+      goto error;
+   }
+
+   SC_TIME_WAIT(scp) = wait_time_secs;
+   SC_TIME_CONN_MAX(scp) = max_conn_per_interval;
+   SC_LB_INTERVAL_LEN_SEC(scp) = interval_len_secs;
+   SC_LB_HISTORY_LEN_SEC(scp) = history_len_secs;
+
+   /* The fill rate should match the connection rate */
+   SC_LB_FILL_PER_SEC(scp) = (double) max_conn_per_interval / (double) interval_len_secs;
+
+   /* We want to "track" connection rate for history_len_secs, we take the
+    * fill per second rate times the history length in seconds.
+    */
+   SC_LB_INIT_BUCKET_COUNT(scp) = SC_LB_FILL_PER_SEC(scp) * (double) history_len_secs;
+
+   return( OK );
+
+error:
+   return( FAILED );
+}
 
 status_e cps_parser( pset_h values, 
                      struct service_config *scp, 
@@ -529,34 +582,38 @@ status_e cps_parser( pset_h values,
    char *cps = (char *) pset_pointer(values, 0);
    char *waittime = (char *) pset_pointer(values, 1);
    unsigned int waittime_int, conn_max;
+   char is_rate_unlimited = FALSE;
 
    if( cps == NULL || waittime == NULL ) {
       parsemsg(LOG_ERR, __func__, "NULL options specified in cps");
-      return( FAILED );
+      goto error;
    }
-   if( parse_ubase10(cps, &conn_max) ) {
-      parsemsg(LOG_ERR, __func__, "cps argument not a number");
-      SC_TIME_CONN_MAX(scp) = 0;
-      SC_TIME_WAIT(scp) = 0;
-      return( FAILED );
+
+   if ( EQ(cps, UNLIMITED_STR) ) {
+      is_rate_unlimited = TRUE;
+      conn_max = 0;
+   } else if( parse_ubase10(cps, &conn_max) ) {
+      parsemsg(LOG_ERR, __func__, "cps argument not a number or " UNLIMITED_STR);
+      goto error;
    }
+
    if( parse_duration_as_seconds(waittime, &waittime_int) ) {
       parsemsg(LOG_ERR, __func__, "cps time argument not a valid duration");
-      SC_TIME_CONN_MAX(scp) = 0;
-      SC_TIME_WAIT(scp) = 0;
-      return( FAILED );
+      goto error;
    }
-   SC_TIME_WAIT(scp) = waittime_int;
-   SC_TIME_CONN_MAX(scp) = conn_max;
 
-   if( SC_TIME_CONN_MAX(scp) < 0 || SC_TIME_WAIT(scp) < 0 ) {
-      parsemsg(LOG_ERR, __func__, "cps arguments invalid");
-      SC_TIME_CONN_MAX(scp) = 0;
-      SC_TIME_WAIT(scp) = 0;
-      return( FAILED );
+   if (FAILED == rate_limit_update(
+         scp, is_rate_unlimited,
+         conn_max, DEFAULT_RATE_INTERVAL_LEN_SEC,
+         DEFAULT_RATE_HISTORY_LEN_SEC, waittime_int)) {
+      goto error;
    }
 
    return(OK);
+
+error:
+   rate_limit_error_cleanup(scp);
+   return( FAILED );
 }
 
 status_e rate_limit_parser( pset_h values,
@@ -568,17 +625,23 @@ status_e rate_limit_parser( pset_h values,
    char *history_len_secs = (char *) pset_pointer(values, 2);
    char *wait_time_secs = (char *) pset_pointer(values, 3);
    unsigned int max_conn_per_interval_int, interval_len_secs_int, history_len_secs_int, wait_time_secs_int;
+   char is_rate_unlimited = FALSE;
 
    if( max_conn_per_interval == NULL || interval_len_secs == NULL || history_len_secs == NULL || wait_time_secs == NULL) {
       parsemsg(LOG_ERR, __func__,
          "NULL options specified in rate_limit; must specify: MAX_CONN_PER_INTERVAL INTERVAL_LEN_SECS HISTORY_LEN_SEC WAIT_TIME_SECS");
       goto error;
    }
-   if( parse_ubase10(max_conn_per_interval, &max_conn_per_interval_int) ) {
+
+   if ( EQ(max_conn_per_interval, UNLIMITED_STR) ) {
+      max_conn_per_interval_int = 0;
+      is_rate_unlimited = TRUE;
+   } else if( parse_ubase10(max_conn_per_interval, &max_conn_per_interval_int) ) {
       parsemsg(LOG_ERR, __func__,
-         "max_conn_per_interval argument not a number");
+         "max_conn_per_interval argument not a number or " UNLIMITED_STR);
       goto error;
    }
+
    if( parse_duration_as_seconds(interval_len_secs, &interval_len_secs_int) ) {
       parsemsg(LOG_ERR, __func__,
          "rate_limit interval_len_secs \"%s\" not a valid duration",
@@ -598,37 +661,18 @@ status_e rate_limit_parser( pset_h values,
       goto error;
    }
 
-   if( max_conn_per_interval_int <= 0
-      || interval_len_secs_int <= 0
-      || history_len_secs_int <= 0
-      || wait_time_secs_int <= 0) {
-      parsemsg(LOG_ERR, __func__, "rate_limit arguments invalid");
+   if (FAILED == rate_limit_update(
+         scp,
+         is_rate_unlimited,
+         max_conn_per_interval_int, interval_len_secs_int, history_len_secs_int, wait_time_secs_int)) {
       goto error;
    }
 
-   SC_TIME_WAIT(scp) = wait_time_secs_int;
-   SC_TIME_CONN_MAX(scp) = max_conn_per_interval_int;
-   SC_LB_INTERVAL_LEN_SEC(scp) = interval_len_secs_int;
-   SC_LB_HISTORY_LEN_SEC(scp) = history_len_secs_int;
+   return( OK );
 
-   /* The fill rate should match the connection rate */
-   SC_LB_FILL_PER_SEC(scp) = (double) max_conn_per_interval_int / (double) interval_len_secs_int;
-
-   /* We want to "track" connection rate for history_len_secs_int, we take the
-    * fill per second rate times the history length in seconds.
-    */
-   SC_LB_INIT_BUCKET_COUNT(scp) = SC_LB_FILL_PER_SEC(scp) * (double) history_len_secs_int;
-
-   return(OK);
-
-   error:
-      SC_LB_INIT_BUCKET_COUNT(scp) = 0;
-      SC_LB_FILL_PER_SEC(scp) = 0.0;
-      SC_TIME_CONN_MAX(scp) = 0;
-      SC_TIME_WAIT(scp) = 0;
-      SC_LB_INTERVAL_LEN_SEC(scp) = 0;
-      SC_LB_HISTORY_LEN_SEC(scp) = 0;
-      return( FAILED );
+error:
+   rate_limit_error_cleanup(scp);
+   return( FAILED );
 }
 
 status_e id_parser( pset_h values, 

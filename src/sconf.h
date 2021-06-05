@@ -136,6 +136,7 @@ struct service_config
    time_t               sc_time_limit ;
    time_t               sc_time_conn ;
    time_t               sc_time_conn_max ;
+   char                 sc_rate_limit_unlimited ;
    time_t               sc_time_wait ;
    time_t               sc_time_reenable ;
    time_t               sc_lb_last_conn_time ;
@@ -212,6 +213,7 @@ struct service_config
 #define SC_TIME_LIMIT( scp )     (scp)->sc_time_limit
 #define SC_TIME_CONN( scp )      (scp)->sc_time_conn
 #define SC_TIME_CONN_MAX( scp )  (scp)->sc_time_conn_max
+#define SC_RATE_LIMIT_UNLIMITED( scp )  (scp)->sc_rate_limit_unlimited
 #define SC_TIME_WAIT( scp )      (scp)->sc_time_wait
 #define SC_TIME_REENABLE( scp )  (scp)->sc_time_reenable
 #define SC_LB_LAST_CONN_TIME( scp )     (scp)->sc_lb_last_conn_time

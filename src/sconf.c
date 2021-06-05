@@ -305,20 +305,22 @@ void sc_dump( struct service_config *scp,
    if ( SC_SPECIFIED( scp, A_NICE ) )
       tabprint( fd, tab_level+1, "Nice = %d\n", SC_NICE(scp) ) ;
 
-   if ( SC_SPECIFIED( scp, A_CPS ) )
-      tabprint( fd, tab_level+1, "CPS = max conn:%lu wait:%lu\n", 
-         SC_TIME_CONN_MAX(scp), SC_TIME_WAIT(scp) );
-
-   if ( SC_SPECIFIED( scp, A_RATE_LIMIT ) ) {
-      tabprint( fd, tab_level+1,
-         "rate_limit = %lld conn per %lld sec over %lld sec history, wait %lld sec\n",
-         (long long) SC_TIME_CONN_MAX(scp),
-         (long long) SC_LB_INTERVAL_LEN_SEC(scp),
-         (long long) SC_LB_HISTORY_LEN_SEC(scp),
-         (long long) SC_TIME_WAIT(scp) );
-      tabprint( fd, tab_level+1,
-         "     initial bucket count = %f, bucket fill per sec = %f\n",
-         SC_LB_INIT_BUCKET_COUNT(scp), SC_LB_FILL_PER_SEC(scp) );
+   char rate_limit_specified =
+      SC_SPECIFIED( scp, A_CPS ) || SC_SPECIFIED( scp, A_RATE_LIMIT );
+   if ( !is_defaults || rate_limit_specified ) {
+      if ( SC_RATE_LIMIT_UNLIMITED(scp) ) {
+         tabprint( fd, tab_level+1, "rate_limit = UNLIMITED\n" );
+      } else {
+         tabprint( fd, tab_level+1,
+            "rate_limit = %lld conn per %lld sec over %lld sec history, wait %lld sec\n",
+            (long long) SC_TIME_CONN_MAX(scp),
+            (long long) SC_LB_INTERVAL_LEN_SEC(scp),
+            (long long) SC_LB_HISTORY_LEN_SEC(scp),
+            (long long) SC_TIME_WAIT(scp) );
+         tabprint( fd, tab_level+1,
+            "     initial bucket count = %f, bucket fill per sec = %f\n",
+            SC_LB_INIT_BUCKET_COUNT(scp), SC_LB_FILL_PER_SEC(scp) );
+      }
    }
 
    if ( SC_SPECIFIED( scp, A_PER_SOURCE ) )

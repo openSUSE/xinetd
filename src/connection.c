@@ -56,7 +56,7 @@ static status_e get_connection( struct service *sp, connection_s *cp )
          if ( cp->co_descriptor == -1 )
          {
 	    if ((errno == EMFILE) || (errno == ENFILE))
-	        cps_service_stop(sp, "no available descriptors");
+	        rate_limit_service_stop(sp, "no available descriptors");
 	    else
                 msg( LOG_ERR, func, "service %s, accept: %m", SVC_ID( sp ) ) ;
             return( FAILED ) ;
