@@ -59,6 +59,16 @@
 #define DEFAULT_LOOP_TIME			10
 
 /*
+ * The number of seconds over which to track the loop rate
+ */
+#define DEFAULT_RATE_INTERVAL_LEN_SEC  1
+
+/*
+ * The number of seconds over which to track the rate limit
+ */
+#define DEFAULT_RATE_HISTORY_LEN_SEC 10
+
+/*
  * Signal-to-action mapping
  */
 #ifndef RECONFIG_HARD_SIG

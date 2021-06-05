@@ -135,7 +135,7 @@ static void stream_echo( const struct server *serp )
       descriptor = accept(descriptor, NULL, NULL);
       if ( descriptor == -1 ) {
          if ((errno == EMFILE) || (errno == ENFILE))
-            cps_service_stop(svc, "no available descriptors");
+            rate_limit_service_stop(svc, "no available descriptors");
          return;
       }
    }
@@ -191,7 +191,7 @@ static void stream_discard( const struct server *serp )
       descriptor = accept(descriptor, NULL, NULL);
       if ( descriptor == -1 ) {
          if ((errno == EMFILE) || (errno == ENFILE))
-            cps_service_stop(svc, "no available descriptors");
+            rate_limit_service_stop(svc, "no available descriptors");
          return;
       }
    }
@@ -263,7 +263,7 @@ static void stream_daytime( const struct server *serp )
       descriptor = accept(descriptor, NULL, NULL);
       if ( descriptor == -1 ) {
          if ((errno == EMFILE) || (errno == ENFILE))
-            cps_service_stop(svc, "no available descriptors");
+            rate_limit_service_stop(svc, "no available descriptors");
          return;
       }
    }
@@ -328,7 +328,7 @@ static void stream_time( const struct server *serp )
       descriptor = accept(descriptor, NULL, NULL);
       if ( descriptor == -1 ) {
          if ((errno == EMFILE) || (errno == ENFILE))
-            cps_service_stop(svc, "no available descriptors");
+            rate_limit_service_stop(svc, "no available descriptors");
          return;
       }
    }
@@ -425,7 +425,7 @@ static void stream_chargen( const struct server *serp )
       descriptor = accept(descriptor, NULL, NULL);
       if ( descriptor == -1 ) {
          if ((errno == EMFILE) || (errno == ENFILE))
-            cps_service_stop(svc, "no available descriptors");
+            rate_limit_service_stop(svc, "no available descriptors");
          return;
       }
    }

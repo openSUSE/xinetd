@@ -43,6 +43,8 @@ struct attribute
 #define KW_INCLUDE		"include"
 #define KW_INCLUDEDIR		"includedir"
 
+#define UNLIMITED_STR "UNLIMITED"
+
 extern int line_count;
 extern const char *current_file;
 

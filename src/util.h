@@ -4,6 +4,10 @@
 #include "pset.h"
 #include "defs.h"
 
+#define SECONDS_PER_MINUTE 60
+#define SECONDS_PER_HOUR (SECONDS_PER_MINUTE * 60)
+#define SECONDS_PER_DAY (SECONDS_PER_HOUR * 24)
+
 void out_of_memory(const char *func);
 const struct name_value *nv_find_value(const struct name_value nv_array[],const char *name);
 const struct name_value *nv_find_name(const struct name_value nv_array[],int value);
@@ -25,5 +29,6 @@ int parse_ull(const char *, int , int , unsigned long long *);
 int parse_base10(const char *, int *);
 int parse_ubase10(const char *, unsigned int *);
 bool_int parse_all_digits(const char *ptr);
+int parse_duration_as_seconds(const char *str, unsigned int *res);
 
 #endif
