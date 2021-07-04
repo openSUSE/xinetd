@@ -189,6 +189,15 @@ static status_e activate_rpc( struct service *sp )
     */
    if ( getsockname( sd, &tsin.sa, &sin_len ) == -1 )
    {
+      if (SC_BIND_ADDR(scp) == NULL && SC_IPV6( scp ))
+      {
+         /* there was no bind address configured and IPv6 fails. Try IPv4 */
+         msg( LOG_NOTICE, func, "IPv6 socket creation failed for service %s, trying IPv4", SC_ID( scp ) ) ;
+         M_CLEAR(SC_XFLAGS(scp), SF_IPV6);
+         M_SET(SC_XFLAGS(scp), SF_IPV4);
+         return svc_activate(sp);
+      }
+
       msg( LOG_ERR, func,
             "getsockname failed (%m). service = %s", sid ) ;
       return( FAILED ) ;
