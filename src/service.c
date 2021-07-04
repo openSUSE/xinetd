@@ -449,6 +449,7 @@ status_e svc_activate( struct service *sp )
     * Initialize the service data
     */
    SVC_RUNNING_SERVERS(sp)   = SVC_RETRIES(sp) = 0 ;
+   SVC_ATTEMPTS(sp) = 0;
 
    if ( SC_MUST_LISTEN( scp ) )
       (void) listen( SVC_FD(sp), LISTEN_BACKLOG ) ;

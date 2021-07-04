@@ -89,9 +89,20 @@ static void cps_service_restart(void)
                msg(LOG_ERR, func,
                "Activating service %s", SC_NAME(scp));
             } else {
-               msg(LOG_ERR, func,
-               "Error activating service %s", 
-               SC_NAME(scp)) ;
+               /* Try to restart the service */
+               SVC_ATTEMPTS(sp) += 1;
+               if ( SVC_ATTEMPTS(sp) < MAX_SVC_ATTEMPTS ) {
+                  msg(LOG_ERR, func,
+                  "Error activating service %s, retrying %d more time(s)...",
+                  SC_NAME(scp),
+                  MAX_SVC_ATTEMPTS - SVC_ATTEMPTS(sp));
+                  xtimer_add(cps_service_restart, 1);
+               } else {
+                  /* Give up */
+                  msg(LOG_ERR, func,
+                  "Error activating service %s",
+                  SC_NAME(scp));
+               }
             } /* else */
          }
       }

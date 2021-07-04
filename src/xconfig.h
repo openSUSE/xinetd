@@ -59,6 +59,12 @@
 #define DEFAULT_LOOP_TIME			10
 
 /*
+ * The number of times to attempt re-activating a service after being
+ * deactivated due to the above.
+ */
+#define MAX_SVC_ATTEMPTS                         30
+
+/*
  * Signal-to-action mapping
  */
 #ifndef RECONFIG_HARD_SIG
