@@ -156,6 +156,7 @@ static status_e activate_rpc( struct service *sp )
    socklen_t              sin_len = sizeof(tsin);
    unsigned long          vers ;
    struct service_config *scp = SVC_CONF( sp ) ;
+   uint16_t               service_port = SC_PORT( scp ) ;
    struct rpc_data       *rdp = SC_RPCDATA( scp ) ;
    char                  *sid = SC_ID( scp ) ;
    unsigned               registered_versions = 0 ;
@@ -172,9 +173,11 @@ static status_e activate_rpc( struct service *sp )
    }
    if( SC_IPV4( scp ) ) {
       tsin.sa_in.sin_family = AF_INET ;
+      tsin.sa_in.sin_port = htons( service_port ) ;
       sin_len = sizeof(struct sockaddr_in);
    } else if( SC_IPV6( scp ) ) {
       tsin.sa_in6.sin6_family = AF_INET6 ;
+      tsin.sa_in6.sin6_port = htons( service_port );
       sin_len = sizeof(struct sockaddr_in6);
    }
 
