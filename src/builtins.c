@@ -50,6 +50,7 @@ static void dgram_daytime(const struct server *) ;
 static void stream_chargen(const struct server *) ;
 static void dgram_chargen(const struct server *) ;
 static void tcpmux_handler(const struct server *) ;
+static int bad_port_check(const union xsockaddr *, const char *);
 
 /*
  * SG - This is the call sequence to get to a built-in service
@@ -161,6 +162,25 @@ static void stream_echo( const struct server *serp )
       Sclose(descriptor);
 }
 
+/* For internal UDP services, make sure we don't respond to our ports
+ * on other servers and to low ports of other services (such as DNS).
+ * This can cause looping.
+ */
+static int bad_port_check( const union xsockaddr *sa, const char *func )
+{
+   uint16_t port = 0;
+
+   port = ntohs( xaddrport( sa ) );
+
+   if ( port < 1024 ) {
+      msg(LOG_WARNING, func,
+         "Possible Denial of Service attack from %s %d", xaddrname(sa), port);
+      return (-1);
+   }
+
+   return (0);
+}
+
 static void dgram_echo( const struct server *serp )
 {
    char            buf[ DATAGRAM_SIZE ] ;
@@ -168,6 +188,7 @@ static void dgram_echo( const struct server *serp )
    ssize_t             cc ;
    socklen_t       sin_len = 0;
    int             descriptor = SERVER_FD( serp ) ;
+   const char      *func = "dgram_echo" ;
 
    if( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) )
       sin_len = sizeof( struct sockaddr_in );
@@ -176,6 +197,7 @@ static void dgram_echo( const struct server *serp )
 
    cc = recvfrom( descriptor, buf, sizeof( buf ), 0, (struct sockaddr *)( &lsin ), &sin_len ) ;
    if ( cc != (ssize_t)-1 ) {
+      if( bad_port_check(&lsin, func) != 0 ) return;
       (void) sendto( descriptor, buf, (size_t)cc, 0, SA( &lsin ), sizeof( lsin ) ) ;
    }
 }
@@ -281,6 +303,7 @@ static void dgram_daytime( const struct server *serp )
    unsigned int    buflen      = sizeof( time_buf ) ;
    int             descriptor  = SERVER_FD( serp ) ;
    ssize_t         val;
+   const char      *func = "dgram_daytime" ;
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
       sin_len = sizeof( struct sockaddr_in );
@@ -291,6 +314,8 @@ static void dgram_daytime( const struct server *serp )
             (struct sockaddr *)( &lsin ), &sin_len );
    if ( val == (ssize_t)-1 )
       return ;
+
+   if( bad_port_check(&lsin, func) != 0 ) return;
 
    daytime_protocol( time_buf, &buflen ) ;
    
@@ -348,6 +373,7 @@ static void dgram_time( const struct server *serp )
    socklen_t       sin_len = 0 ;
    int             fd      = SERVER_FD( serp ) ;
    ssize_t         val;
+   const char      *func = "dgram_time" ;
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
       sin_len = sizeof( struct sockaddr_in );
@@ -357,6 +383,7 @@ static void dgram_time( const struct server *serp )
    val = recvfrom( fd, buf, sizeof( buf ), 0, (struct sockaddr *)( &lsin ), &sin_len );
    if ( val == (ssize_t)-1 )
       return ;
+   if( bad_port_check(&lsin, func) != 0 ) return;
 
    time_protocol( time_buf ) ;
    (void) sendto( fd, (char *) time_buf, 4, 0, SA( &lsin ), sin_len ) ;
@@ -455,6 +482,7 @@ static void dgram_chargen( const struct server *serp )
    int             fd      = SERVER_FD( serp ) ;
    unsigned int    left    = sizeof( buf ) ;
    ssize_t         val;
+   const char      *func = "dgram_chargen" ;
 
    if ( SC_IPV4( SVC_CONF( SERVER_SERVICE( serp ) ) ) ) 
       sin_len = sizeof( struct sockaddr_in );
@@ -468,6 +496,8 @@ static void dgram_chargen( const struct server *serp )
 #if BUFFER_SIZE < LINE_LENGTH+2
    bad_variable = 1 ;      /* this will cause a compilation error */
 #endif
+
+   if( bad_port_check(&lsin, func) != 0 ) return;
 
    for ( p = buf ; left > 2 ; left -= len, p += len )
    {
