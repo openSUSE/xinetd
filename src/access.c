@@ -69,6 +69,7 @@ static void cps_service_restart(void)
    unsigned int i;
    time_t nowtime;
    const char *func = "cps_service_restart";
+   int rs;
 
    nowtime = time(NULL);
    for( i=0; i < pset_count( SERVICES(ps) ); i++ ) {
@@ -80,8 +81,11 @@ static void cps_service_restart(void)
       if( SVC_STATE(sp) == SVC_DISABLED ) {
          scp = SVC_CONF( sp );
          if ( SC_TIME_REENABLE(scp) <= nowtime ) {
+            rs = SVC_RUNNING_SERVERS(sp);
             /* re-enable the service */
             if( svc_activate(sp) == OK ) {
+               /* remember running servers after restart */
+               SVC_RUNNING_SERVERS(sp) = rs;
                msg(LOG_ERR, func,
                "Activating service %s", SC_NAME(scp));
             } else {
