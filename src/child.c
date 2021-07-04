@@ -500,7 +500,7 @@ static int set_context_from_socket( const struct service_config *scp, int fd )
    if (getpeercon(fd, &peer_context) < 0)
      goto fail;
 
-   exepath = SC_SERVER_ARGV( scp )[0];
+   exepath = SC_SERVER( scp );
    if (getfilecon(exepath, &exec_context) < 0)
      goto fail;
 
