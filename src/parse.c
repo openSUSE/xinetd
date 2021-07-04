@@ -627,7 +627,28 @@ static status_e identify_attribute( entry_e entry_type,
 
    if ( (*ap->a_parser)( attr_values, scp, op ) == OK )
    {    /* This is the normal path. */
-	SC_SPECIFY( scp, ap->a_id ) ;
+       /* If flags contain NAMEINARGS and server_args is already set, disable the service.
+          Server args are already set incorrectly. */
+       if ( strcmp( ap->a_name, "flags" ) == 0 &&
+            SC_SERVER_ARGV( scp ) )
+       {
+           int i = 0, n = pset_count( attr_values ) ;
+           for ( ; i < n ; i++ ) {
+               char *v = (char *)pset_pointer( attr_values, i ) ;
+               if ( strcmp( v, "NAMEINARGS" ) == 0 )
+                   break ;
+           }
+
+           if ( i != n ) {
+               parsemsg( LOG_ERR, func,
+                         "NAMEINARGS flag is set after server_args - DISABLING SERVICE" ) ;
+               SC_DISABLE( scp ) ;
+           }
+       }
+       else
+       {
+           SC_SPECIFY( scp, ap->a_id ) ;
+       }
    }
    else if ( entry_type == SERVICE_ENTRY )
    {

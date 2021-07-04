@@ -381,13 +381,11 @@ static void general_handler( int sig )
          break ;
       
       default:
-         /* This will cause a dead lock if the signal happens when the
-          * daemon is writing / logging something. The message is not
-          * important, so comment it out.
-          */
-         // msg( LOG_NOTICE, func, "Unexpected signal %s", sig_name( sig ) ) ;
-         if ( debug.on && sig == SIGINT )
-            exit( 1 ) ;
+         /* Let my_handler() queue this signal for later logging.
+            Calling msg() and thus syslog() directly here can hang up
+            the process, trying to acquire an already acquired lock,
+            because another syslog() could have been the interrupted code. */
+         my_handler(sig);
    }
 }
 
@@ -491,6 +489,9 @@ void check_pipe(void)
          default:
             msg(LOG_ERR, func, "unexpected signal: %s in signal pipe", 
                sig_name(sig));
+
+            if ( debug.on && sig == SIGINT )
+               exit( 1 ) ;
       }
    }
 }

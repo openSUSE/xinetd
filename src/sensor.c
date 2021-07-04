@@ -100,14 +100,15 @@ void process_sensor( const struct service *sp, const union xsockaddr *addr)
 	 {
 	    /* Here again, eh?...update time stamp. */
             char *exp_time;
-	    time_t stored_time;
+	    int stored_time;
 
 	    item_matched--; /* Is # plus 1, to even get here must be >= 1 */
             exp_time = pset_pointer( global_no_access_time, item_matched ) ;
             if (exp_time == NULL)
                return ;
 
-            if ( parse_base10(exp_time, (int *)&stored_time) )
+            /* FIXME: Parse (long int) instead of (int) prior to possible Y2K38 bug. */
+            if ( parse_base10(exp_time, &stored_time ) )
             {  /* if never let them off, bypass */
                if (stored_time != -1)
                {

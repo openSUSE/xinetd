@@ -106,7 +106,8 @@ log option is not used.
 This will cause the first argument in "server_args" to be argv[0] when
 executing the server, as specified in "server".  This allows you to use
 tcpd by putting tcpd in "server" and the name of the server in "server_args"
-like in normal inetd.
+like in normal inetd. This flag has to be specified before "server_args",
+otherwise is not taken into account.
 .TP
 .B NODELAY
 If the service is a tcp service and the NODELAY flag is set, then the

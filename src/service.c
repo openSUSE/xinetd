@@ -156,6 +156,7 @@ static status_e activate_rpc( struct service *sp )
    socklen_t              sin_len = sizeof(tsin);
    unsigned long          vers ;
    struct service_config *scp = SVC_CONF( sp ) ;
+   uint16_t               service_port = SC_PORT( scp ) ;
    struct rpc_data       *rdp = SC_RPCDATA( scp ) ;
    char                  *sid = SC_ID( scp ) ;
    unsigned               registered_versions = 0 ;
@@ -172,9 +173,11 @@ static status_e activate_rpc( struct service *sp )
    }
    if( SC_IPV4( scp ) ) {
       tsin.sa_in.sin_family = AF_INET ;
+      tsin.sa_in.sin_port = htons( service_port ) ;
       sin_len = sizeof(struct sockaddr_in);
    } else if( SC_IPV6( scp ) ) {
       tsin.sa_in6.sin6_family = AF_INET6 ;
+      tsin.sa_in6.sin6_port = htons( service_port );
       sin_len = sizeof(struct sockaddr_in6);
    }
 
@@ -189,6 +192,15 @@ static status_e activate_rpc( struct service *sp )
     */
    if ( getsockname( sd, &tsin.sa, &sin_len ) == -1 )
    {
+      if (SC_BIND_ADDR(scp) == NULL && SC_IPV6( scp ))
+      {
+         /* there was no bind address configured and IPv6 fails. Try IPv4 */
+         msg( LOG_NOTICE, func, "IPv6 socket creation failed for service %s, trying IPv4", SC_ID( scp ) ) ;
+         M_CLEAR(SC_XFLAGS(scp), SF_IPV6);
+         M_SET(SC_XFLAGS(scp), SF_IPV4);
+         return svc_activate(sp);
+      }
+
       msg( LOG_ERR, func,
             "getsockname failed (%m). service = %s", sid ) ;
       return( FAILED ) ;
@@ -437,6 +449,7 @@ status_e svc_activate( struct service *sp )
     * Initialize the service data
     */
    SVC_RUNNING_SERVERS(sp)   = SVC_RETRIES(sp) = 0 ;
+   SVC_ATTEMPTS(sp) = 0;
 
    if ( SC_MUST_LISTEN( scp ) )
       (void) listen( SVC_FD(sp), LISTEN_BACKLOG ) ;
